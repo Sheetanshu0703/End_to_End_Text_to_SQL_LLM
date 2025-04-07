@@ -1,10 +1,19 @@
-from dotenv import load_dotenv
 import streamlit as st
+st.set_page_config(
+    page_title="SQL Query Generator using Gemini",
+    page_icon="🧠",
+    layout="centered",
+    initial_sidebar_state="auto"
+)
+from dotenv import load_dotenv
 import os
 import sqlite3
 import google.generativeai as genai
 import pandas as pd
 from sql import init_db
+
+
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,12 +65,6 @@ prompt = ["""Your original prompt here..."""]  # Keep your original Gemini promp
 
 # === Streamlit UI ===
 
-st.set_page_config(
-    page_title="SQL Query Generator using Gemini",
-    page_icon="🧠",
-    layout="centered",
-    initial_sidebar_state="auto"
-)
 
 st.markdown("""
     <h1 style='text-align: center; color: #4CAF50;'>🔍 Gemini SQL Query Assistant</h1>
