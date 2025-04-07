@@ -5,21 +5,32 @@ import sqlite3
 import google.generativeai as genai
 import pandas as pd
 from sql import init_db
+
+# Initialize DB if needed
 init_db()
 
-
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 # Configure Gemini API key
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
+# Sidebar Upload
+st.sidebar.header("📂 Upload Your student.db File")
+uploaded_file = st.sidebar.file_uploader("Upload your `Student.db` file", type=["db"])
 
+db_path = "Student.db"  # Default path
+
+# Save uploaded file if available
+if uploaded_file:
+    with open("student.db", "wb") as f:
+        f.write(uploaded_file.read())
+    st.sidebar.success("✅ Database uploaded successfully!")
 
 # Function to get Gemini response
 def get_gemini_response(question, prompt):
     try:
-        model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")  # Use 'model_name' as keyword
+        model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
         full_prompt = f"{prompt[0]}\n\nQuestion: {question}"
         response = model.generate_content(full_prompt)
         return response.text
@@ -34,12 +45,12 @@ def read_sql_query(sql, db):
         cur = conn.cursor()
         cur.execute(sql)
         rows = cur.fetchall()
-        conn.commit()
+        col_names = [desc[0] for desc in cur.description]
         conn.close()
-        return rows
+        return rows, col_names
     except Exception as e:
         st.error(f"SQL Error: {str(e)}")
-        return []
+        return [], []
 
 # Prompt template
 prompt = ["""
@@ -105,10 +116,7 @@ Note:
 - Keep the query clean, concise, and syntactically correct.
 """]
 
-#streamlit UI
-
-
-# Page configuration
+# Streamlit UI
 st.set_page_config(
     page_title="SQL Query Generator using Gemini",
     page_icon="🧠",
@@ -116,19 +124,21 @@ st.set_page_config(
     initial_sidebar_state="auto"
 )
 
-# Header Section
+# Header
 st.markdown("""
     <h1 style='text-align: center; color: #4CAF50;'>🔍 Gemini SQL Query Assistant</h1>
     <p style='text-align: center; font-size: 18px;'>Ask any question in plain English and get the corresponding SQL query + results.</p>
 """, unsafe_allow_html=True)
 
-# Input Section
+# Question Input
 st.markdown("### 📝 Enter your question in English")
 question = st.text_input("Example: How many students scored above 85?", key="input")
 
 # Action Button
 if st.button("🚀 Generate SQL & Run"):
-    if question.strip() == "":
+    if not uploaded_file:
+        st.warning("⚠️ Please upload your `Student.db` file from the sidebar.")
+    elif question.strip() == "":
         st.warning("Please enter a question to generate SQL.")
     else:
         with st.spinner("Generating SQL query using Gemini..."):
@@ -140,16 +150,15 @@ if st.button("🚀 Generate SQL & Run"):
             st.markdown("### 📄 Generated SQL Query")
             st.code(response, language="sql")
 
-            # Execute the SQL
+            # Execute SQL
             try:
-                rows = read_sql_query(response, "Student.db")
-
+                rows, columns = read_sql_query(response, db_path)
                 st.markdown("### 📊 Query Results")
                 if rows:
-                    df = pd.DataFrame(rows)
+                    df = pd.DataFrame(rows, columns=columns)
                     st.dataframe(df, use_container_width=True)
                 else:
-                    st.info("No results found for the given query.")
+                    st.info("No results found.")
             except Exception as e:
                 st.error(f"❌ Error executing SQL query:\n{e}")
         else:
