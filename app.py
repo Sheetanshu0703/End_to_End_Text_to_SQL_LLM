@@ -5,7 +5,6 @@ import sqlite3
 import google.generativeai as genai
 import pandas as pd
 from sql import init_db
-init_db()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,8 +21,10 @@ db_path = "student.db"  # Default path
 if uploaded_file is not None:
     with open("uploaded_student.db", "wb") as f:
         f.write(uploaded_file.read())
-    db_path = "uploaded_student.db"  # Use uploaded DB
-    st.sidebar.success("Database uploaded successfully!")
+    db_path = "uploaded_student.db"
+    st.sidebar.success("✅ Database uploaded successfully!")
+else:
+    init_db()  # Only create fresh DB if no file is uploaded
 
 # Function to get Gemini response
 def get_gemini_response(question, prompt):
@@ -51,7 +52,7 @@ def read_sql_query(sql, db):
         return []
 
 # Prompt template (unchanged)
-prompt = [""" ... """]  # Keep your original prompt block here
+prompt = ["""Your original prompt here..."""]  # Keep your original Gemini prompt
 
 # === Streamlit UI ===
 
@@ -84,7 +85,7 @@ if st.button("🚀 Generate SQL & Run"):
             st.code(response, language="sql")
 
             try:
-                rows = read_sql_query(response, db_path)  # Use dynamic DB path
+                rows = read_sql_query(response, db_path)
 
                 st.markdown("### 📊 Query Results")
                 if rows:
@@ -94,5 +95,14 @@ if st.button("🚀 Generate SQL & Run"):
                     st.info("No results found for the given query.")
             except Exception as e:
                 st.error(f"❌ Error executing SQL query:\n{e}")
+
+            # 📥 Download current DB
+            with open(db_path, "rb") as f:
+                st.download_button(
+                    label="📥 Download Current Database",
+                    data=f,
+                    file_name=os.path.basename(db_path),
+                    mime="application/octet-stream"
+                )
         else:
             st.error("Failed to generate SQL. Please try again.")
