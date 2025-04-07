@@ -1,21 +1,22 @@
-# Ignore Python virtual environment
+# Python virtual environment
 venv/
 
-# Ignore Python cache files
+# Python bytecode and cache files
 __pycache__/
 *.py[cod]
 *.pyo
 
-# Ignore environment variables
+# Environment variables
 .env
 
-
-# Ignore Jupyter Notebook checkpoints (if any)
+# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# VS Code settings (optional, personal)
+# VS Code settings
 .vscode/
 
-# OS-specific files
+# Streamlit specific (optional)
+.streamlit/config.toml
+
+# macOS system files
 .DS_Store
-Thumbs.db
