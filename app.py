@@ -163,12 +163,36 @@ if st.button("🚀 Generate SQL & Run"):
                 st.error(f"❌ Error executing SQL query:\n{e}")
 
             # 📥 Download current DB
-            with open(db_path, "rb") as f:
-                st.download_button(
-                    label="📥 Download Current Database",
-                    data=f,
-                    file_name=os.path.basename(db_path),
-                    mime="application/octet-stream"
-                )
+            # 📥 Download Options
+            st.markdown("### 📥 Download Options")
+            download_format = st.selectbox("Choose file format:", ["SQLite (.sqlite)", "Raw DB (.db)", "CSV (.csv)"])
+
+            if download_format == "CSV (.csv)":
+                try:
+                    # Convert entire STUDENT table to CSV
+                    conn = sqlite3.connect(db_path)
+                    df_all = pd.read_sql_query("SELECT * FROM STUDENT", conn)
+                    conn.close()
+
+                    csv_data = df_all.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Download CSV of STUDENT Table",
+                        data=csv_data,
+                        file_name="student_data.csv",
+                        mime="text/csv"
+                    )
+                except Exception as e:
+                    st.error(f"❌ Error generating CSV: {e}")
+            else:
+                extension = "sqlite" if download_format == "SQLite (.sqlite)" else "db"
+                filename = f"student.{extension}"
+                with open(db_path, "rb") as f:
+                    st.download_button(
+                        label=f"📥 Download Database as {extension}",
+                        data=f,
+                        file_name=filename,
+                        mime="application/octet-stream"
+                    )
+
         else:
             st.error("Failed to generate SQL. Please try again.")
