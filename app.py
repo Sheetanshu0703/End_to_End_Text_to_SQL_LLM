@@ -60,8 +60,71 @@ def read_sql_query(sql, db):
         st.error(f"SQL Error: {str(e)}")
         return []
 
-# Prompt template (unchanged)
-prompt = ["""Your original prompt here..."""]  # Keep your original Gemini prompt
+# Prompt template
+prompt = ["""
+You are an expert in converting English questions into SQL queries.
+
+The SQL database has the table named STUDENT with the following columns:
+- ID (Integer)
+- NAME (Text)
+- AGE (Integer)
+- GENDER (Text)
+- CLASS (Text)
+- SECTION (Text)
+- ROLL_NO (Text)
+- MARKS (Integer)
+- EMAIL (Text)
+- PHONE (Text)
+- ADDRESS (Text)
+- ADMISSION_DATE (Date)
+- ATTENDANCE_PCT (Float)
+- SCHOLARSHIP (Boolean)
+
+Generate precise SQL queries for the following kinds of questions:
+
+Example 1 -  How many students are enrolled in the database?  
+=> SELECT COUNT(*) FROM STUDENT;
+
+Example 2 - Show all students in the 'Data Science' class.  
+=> SELECT * FROM STUDENT WHERE CLASS = 'Data Science';
+
+Example 3 -  List all students with marks above 85.  
+=> SELECT * FROM STUDENT WHERE MARKS > 85;
+
+Example 4 -  Show the names and emails of female students in section B.  
+=> SELECT NAME, EMAIL FROM STUDENT WHERE GENDER = 'Female' AND SECTION = 'B';
+
+Example 5 -  Who are the scholarship holders in the AI & ML class?  
+=> SELECT NAME FROM STUDENT WHERE CLASS = 'AI & ML' AND SCHOLARSHIP = TRUE;
+
+Example 6 -  List students with attendance below 75%.  
+=> SELECT * FROM STUDENT WHERE ATTENDANCE_PCT < 75;
+
+Example 7 -  Get all students admitted after 1st Jan 2022.  
+=> SELECT * FROM STUDENT WHERE ADMISSION_DATE > '2022-01-01';
+
+Example 8 -  Find students aged between 20 and 22.  
+=> SELECT * FROM STUDENT WHERE AGE BETWEEN 20 AND 22;
+
+Example 9 -  List students whose name starts with 'A'.  
+=> SELECT * FROM STUDENT WHERE NAME LIKE 'A%';
+
+Example 10 - Show the top 5 students with the highest marks.  
+=> SELECT * FROM STUDENT ORDER BY MARKS DESC LIMIT 5;
+
+Example 11 - Count how many students are in each class.  
+=> SELECT CLASS, COUNT(*) FROM STUDENT GROUP BY CLASS;
+
+Example 12 - Find students from 'Delhi' who scored above 90.  
+=> SELECT * FROM STUDENT WHERE ADDRESS = 'Delhi' AND MARKS > 90;
+
+Note:  
+- Only return the raw SQL query.  
+- Do not include backticks (
+) or the word "sql" in the response.  
+- Keep the query clean, concise, and syntactically correct.
+"""]
+  # Keep your original Gemini prompt
 
 # === Streamlit UI ===
 
