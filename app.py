@@ -1,41 +1,40 @@
 import streamlit as st
+from dotenv import load_dotenv
+import os
+import sqlite3
+import google.generativeai as genai
+import pandas as pd
+from sql import init_db  # Make sure this function exists and creates a default database
+
+# === Page Configuration ===
 st.set_page_config(
     page_title="SQL Query Generator using Gemini",
     page_icon="🧠",
     layout="centered",
     initial_sidebar_state="auto"
 )
-from dotenv import load_dotenv
-import os
-import sqlite3
-import google.generativeai as genai
-import pandas as pd
-from sql import init_db
 
-
-
-
-# Load environment variables from .env file
+# === Load Environment Variables ===
 load_dotenv()
 
-# Configure Gemini API key
+# === Configure Gemini API ===
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# === Streamlit File Uploader ===
+# === Sidebar File Uploader ===
 st.sidebar.markdown("### 📂 Upload Student.db")
 uploaded_file = st.sidebar.file_uploader("Upload your Student.db file", type=["db"])
 
-# Save uploaded database to a temporary path
-db_path = "student.db"  # Default path
+# === Save uploaded database or create default ===
+db_path = "student.db"
 if uploaded_file is not None:
     with open("uploaded_student.db", "wb") as f:
         f.write(uploaded_file.read())
     db_path = "uploaded_student.db"
     st.sidebar.success("✅ Database uploaded successfully!")
 else:
-    init_db()  # Only create fresh DB if no file is uploaded
+    init_db()
 
-# Function to get Gemini response
+# === Gemini Query Function ===
 def get_gemini_response(question, prompt):
     try:
         model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest")
@@ -46,21 +45,22 @@ def get_gemini_response(question, prompt):
         st.error(f"Gemini API Error: {str(e)}")
         return None
 
-# Function to execute SQL query
+# === SQL Execution Function ===
 def read_sql_query(sql, db):
     try:
         conn = sqlite3.connect(db)
         cur = conn.cursor()
         cur.execute(sql)
         rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
         conn.commit()
         conn.close()
-        return rows
+        return rows, columns
     except Exception as e:
         st.error(f"SQL Error: {str(e)}")
-        return []
+        return [], []
 
-# Prompt template
+# === Prompt Template ===
 prompt = ["""
 You are an expert in converting English questions into SQL queries.
 
@@ -124,11 +124,8 @@ Note:
 ) or the word "sql" in the response.  
 - Keep the query clean, concise, and syntactically correct.
 """]
-  # Keep your original Gemini prompt
 
-# === Streamlit UI ===
-
-
+# === UI ===
 st.markdown("""
     <h1 style='text-align: center; color: #4CAF50;'>🔍 Gemini SQL Query Assistant</h1>
     <p style='text-align: center; font-size: 18px;'>Ask any question in plain English and get the corresponding SQL query + results.</p>
@@ -145,31 +142,26 @@ if st.button("🚀 Generate SQL & Run"):
             response = get_gemini_response(question, prompt)
 
         if response:
-            st.success("SQL query generated successfully!")
+            st.success("✅ SQL query generated successfully!")
 
             st.markdown("### 📄 Generated SQL Query")
             st.code(response, language="sql")
 
-            try:
-                rows = read_sql_query(response, db_path)
+            rows, columns = read_sql_query(response, db_path)
 
-                st.markdown("### 📊 Query Results")
-                if rows:
-                    df = pd.DataFrame(rows)
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("No results found for the given query.")
-            except Exception as e:
-                st.error(f"❌ Error executing SQL query:\n{e}")
+            st.markdown("### 📊 Query Results")
+            if rows:
+                df = pd.DataFrame(rows, columns=columns)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No results found for the given query.")
 
-            # 📥 Download current DB
-            # 📥 Download Options
+            # === Download Section ===
             st.markdown("### 📥 Download Options")
             download_format = st.selectbox("Choose file format:", ["SQLite (.sqlite)", "Raw DB (.db)", "CSV (.csv)"])
 
             if download_format == "CSV (.csv)":
                 try:
-                    # Convert entire STUDENT table to CSV
                     conn = sqlite3.connect(db_path)
                     df_all = pd.read_sql_query("SELECT * FROM STUDENT", conn)
                     conn.close()
@@ -193,6 +185,5 @@ if st.button("🚀 Generate SQL & Run"):
                         file_name=filename,
                         mime="application/octet-stream"
                     )
-
         else:
-            st.error("Failed to generate SQL. Please try again.")
+            st.error("❌ Failed to generate SQL. Please try again.")
