@@ -9,8 +9,6 @@ __pycache__/
 # Ignore environment variables
 .env
 
-# Ignore database file (optional, depends if you want to share it)
-student.db
 
 # Ignore Jupyter Notebook checkpoints (if any)
 .ipynb_checkpoints/
