@@ -4,6 +4,9 @@ import os
 import sqlite3
 import google.generativeai as genai
 import pandas as pd
+from sql import init_db
+init_db()
+
 
 # Load environment variables from .env file
 load_dotenv()
